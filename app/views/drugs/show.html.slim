@@ -1,0 +1,60 @@
+
+
+h1 = @drug.name
+= link_to(@drug.url, @drug.url) unless @drug.url.nil?
+
+p = @drug.description
+
+dl.dl-horizontal.well
+	dt Brands
+	dd = @drug.brands.collect {|b| b.name}.join(', ')
+	dt Chemical Formula
+	dd = @drug.chemical_formula
+
+	dt Absorption
+	dd = @drug.absorption
+
+	dt Drug Type
+	dd = @drug.drug_type
+
+	dt CAS Registry Number
+	dd = @drug.cas_registry_number
+
+	dt Chemical Iupac Name
+	dd = @drug.chemical_iupac_name
+
+	dt Toxicity
+	dd = @drug.toxicity
+
+	dt Biotransformations
+	dd = @drug.biotransformation
+
+	dt Half Life
+	dd = @drug.half_life
+
+	dt Protein Binding
+	dd = @drug.protein_binding
+
+	dt Pharmacology
+	dd = @drug.pharmacology
+
+	dt Mechanism of Action
+	dd = @drug.mechanism_of_action
+
+	dt Indication
+	dd = @drug.indication
+
+	dt Route of Elimination
+	dd = @drug.route_of_elimination
+
+	dt Volume of Distribution
+	dd = @drug.volume_of_distribution
+
+	dt Clearance
+	dd = @drug.clearance
+
+	dt General References
+	dd = @drug.general_references
+
+	dt Synthesis Reference
+	dd = @drug.synthesis_reference

@@ -1,0 +1,46 @@
+doctype html
+html lang="en"
+	head
+		meta charset="utf-8"
+		meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"
+		meta name="viewport" content="width=device-width, initial-scale=1.0"
+		title = content_for?(:title) ? yield(:title) : "BMI 591"
+		= csrf_meta_tags
+		= stylesheet_link_tag "application", :media => "all"
+
+	body class="#{yield(:body_class)}"
+		.navbar.navbar-default
+			.navbar-header
+				button.navbar-toggle data-target="#navbar-main" data-toggle="collapse"
+						span.icon-bar
+						span.icon-bar
+						span.icon-bar
+				a.navbar-brand href="#{root_path}"
+					| Preston Lee's BMI 591 Labs
+			.collapse.navbar-collapse#navbar-main
+				ul.nav.navbar-nav
+					li.dropdown
+						a.dropdown-toggle data-toggle="dropdown" href="#"
+							| Labs
+							b.caret
+						ul class="dropdown-menu"
+							li = link_to '#1', lab1_path
+					li.dropdown
+						a.dropdown-toggle data-toggle="dropdown" href="#"
+							| Data
+							span.caret
+						ul class="dropdown-menu"
+							li = link_to 'DrugBank', drugs_path
+
+
+
+		.container
+			= bootstrap_flash
+			= yield
+
+		
+		footer.navbar.navbar-fixed-bottom
+				span Copyright &copy; #{Time.now.year} Preston Lee.
+
+		= javascript_include_tag "application"
+

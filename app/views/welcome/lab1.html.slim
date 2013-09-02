@@ -1,0 +1,29 @@
+h1 Lab 1
+h4 Preston Lee
+hr
+
+.col-md-4
+	h4 About
+	p Hey! I took a little different path in completing this assignment. Instead of turning in a few raw code snippets and a Word document, I'm submitting everything as a full-fledged interactive web application instead. Please use the latest version of a modern web browser such as Chrome, Firefox or Safari. I worked on this project alone.
+	p If you'd literally like to check out this code, it's all released under the MIT license on my GitHub page, #{link_to 'https://github.com/preston', 'https://github.com/preston'}.
+
+.col-md-4
+	h4 Included Materials
+	p The application is backed by a local Solr daemon over a Lucene processes to index text, as well as a MySQL database for record storage.
+
+	h4 Live Stats
+	dl.dl-horizontal
+		dt Drug Records
+		dd.text-info = Drug.count
+		dt PubMed Articles
+		/ dd = Article.count
+
+.col-md-4
+	h4 Drugbank Imports
+	= link_to "Browse Drugs", drugs_path, class: 'btn btn-default'
+	p Coincidentally, I wrote the original Drugbank v2 parser in Ruby a few years ago to handle the "DrugCard" format. This has since been deprecated and superceeded by the v3 .xml format and SAX parser implementation maintained by a colleague, Eric Harrison. I used a new custom schema and the existing XML parser to import all drugbank records into this system.
+
+
+.col-md-4
+	h4 PubMed Data
+	p For PubMed data, I used the NCBI's search tool to pull down article data matching "multiple myeloma" in .csv format. I think created both imported the raw data into a MySQL database, created the Solr/Lucene configuration file, and indexed everything

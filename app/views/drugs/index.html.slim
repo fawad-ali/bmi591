@@ -1,0 +1,33 @@
+- content_for :body_class do 'drugs index' end
+
+#title_search_box
+	h1 DrugBank Records
+	form.form-search
+		input name='q' type="text" placeholder="Search Drugs" class="search-query"
+	p.muted
+		= Drug.count
+		|  drugs in database.
+
+table.table.table-striped.table-condensed#drugs_table
+	thead
+		tr
+			th Name
+			th Brand names
+			th Drug type
+			th Chemical iupac name
+			th Cas registry number
+			th Drugbank ID
+			th Protein Binding
+
+	tbody
+		- @drugs.each do |drug|
+			tr
+				td = link_to drug.name, drug
+				td = drug.brands.collect {|b| b.name}.join(', ')
+				td = drug.drug_type
+				td = drug.chemical_iupac_name
+				td = drug.cas_registry_number.nil? ? '' : link_to(drug.cas_registry_number, cas_url(drug.cas_registry_number))
+				td = drug.drugbank_id.nil? ? '' : link_to(drug.drugbank_id, drugbank_url(drug.drugbank_id))
+				td = drug.protein_binding
+
+= will_paginate @drugs
