@@ -1,0 +1,36 @@
+#!/usr/bin/env ruby
+
+require 'find'
+
+
+# File.join(File.dirname(__FILE__), '..', '')
+
+root = ARGV[0]
+if !root.nil? && File.exists?(root)
+	puts "Searching #{root} for all data files, recursively..."
+else
+	puts "\n\tUsage: #{__FILE__} <directory_of_nxml_files\n\n"
+	exit(1)
+end
+
+paths = []
+Find.find(root) do
+	|path| paths << path if(path =~ /\.nxml$/)
+end
+puts "Total files to import: #{paths.length}"
+paths.each do |path|
+	xml = File.read(path)
+	doc = Nokogiri::XML(xml)
+	a = PubMedArticle.new
+	a.pm_id = doc.xpath('//article//article-id[pub-id-type=pmid]').first.text
+	a.abstract = doc.xpath('//article//abstract/p').first.text
+	a.publication_date = Date.new(
+		doc.xpath('//article//pub-data[pub-type=epub]//year').first.text,
+		doc.xpath('//article//pub-data[pub-type=epub]//month').first.text,
+		doc.xpath('//article//pub-data[pub-type=epub]//day').first.text)
+	a.journal_name = doc.xpath('//article//journal-title').first.text,
+
+end
+
+
+puts 'Done!'
