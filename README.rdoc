@@ -1,28 +1,5 @@
 == README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+BMI 591 Lab 1, implemented as a Lucene/Solr-backed web application. Lucene/Solr is used for indexing, and MySQL for raw storage. The application itself is a Rails app. Document importers are provided for PubMed .nxml format as well as DrugBank v3.
 
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
-
-
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+Preston Lee
