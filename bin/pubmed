@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'find'
+require 'nokogiri'
 
 
 # File.join(File.dirname(__FILE__), '..', '')
@@ -14,21 +15,39 @@ else
 end
 
 paths = []
-Find.find(root) do
-	|path| paths << path if(path =~ /\.nxml$/)
+Find.find(root) do |path|
+	paths << path if(path =~ /\.nxml$/)
 end
+
 puts "Total files to import: #{paths.length}"
+skipped = 0
 paths.each do |path|
 	xml = File.read(path)
 	doc = Nokogiri::XML(xml)
 	a = PubMedArticle.new
-	a.pm_id = doc.xpath('//article//article-id[pub-id-type=pmid]').first.text
-	a.abstract = doc.xpath('//article//abstract/p').first.text
-	a.publication_date = Date.new(
-		doc.xpath('//article//pub-data[pub-type=epub]//year').first.text,
-		doc.xpath('//article//pub-data[pub-type=epub]//month').first.text,
-		doc.xpath('//article//pub-data[pub-type=epub]//day').first.text)
-	a.journal_name = doc.xpath('//article//journal-title').first.text,
+
+	pm_id = doc.xpath('//article-id[@pub-id-type="pmid"]').first
+
+	title = doc.xpath('//article-title').first
+	abstract = doc.xpath('//abstract/p').first
+	journal_name = doc.xpath('//article//journal-title').first
+	p_year	= doc.xpath('//article//pub-date[@pub-type="epub"]//year').first
+	p_month	= doc.xpath('//article//pub-date[@pub-type="epub"]//month').first
+	p_day	= doc.xpath('//article//pub-date[@pub-type="epub"]//day').first
+
+	a.pm_id = pm_id.text.to_i unless pm_id.nil?
+	a.title = title.text unless title.nil?
+	a.abstract = abstract.text unless abstract.nil?
+	a.journal_name = journal_name.text unless journal_name.nil?
+	a.publication_date = Date.new(p_year.text.to_i, p_month.text.to_i, p_day.text.to_i) if p_year && p_month && p_day
+	a.save!
+
+	doc.xpath('//contrib[@contrib-type="author"]').each do |doc_author|
+		author = Author.new(pub_med_article: a)
+		author.surname = doc_author.xpath('./name/surname').text
+		author.given_name = doc_author.xpath('./name/given-names').text
+		author.save!
+	end
 
 end
 

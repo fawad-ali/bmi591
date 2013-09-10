@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20130902231917) do
+ActiveRecord::Schema.define(version: 20130909190302) do
 
   create_table "atc_codes", force: true do |t|
     t.integer  "drug_id"
@@ -21,6 +21,14 @@ ActiveRecord::Schema.define(version: 20130902231917) do
   end
 
   add_index "atc_codes", ["drug_id"], name: "atc_codes_drug_id_idx"
+
+  create_table "authors", force: true do |t|
+    t.integer  "pub_med_article_id"
+    t.string   "given_name"
+    t.string   "surname"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "brands", force: true do |t|
     t.string   "name"
@@ -182,6 +190,17 @@ ActiveRecord::Schema.define(version: 20130902231917) do
   end
 
   add_index "prices", ["drug_id"], name: "prices_drug_id_idx"
+
+  create_table "pub_med_articles", force: true do |t|
+    t.integer  "pm_id"
+    t.string   "title"
+    t.string   "authors"
+    t.text     "abstract"
+    t.date     "publication_date"
+    t.string   "journal_name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
 
   create_table "secondary_accession_numbers", force: true do |t|
     t.integer  "drug_id"

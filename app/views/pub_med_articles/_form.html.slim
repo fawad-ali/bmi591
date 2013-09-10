@@ -1,0 +1,27 @@
+= form_for @pub_med_article do |f|
+  - if @pub_med_article.errors.any?
+    #error_explanation
+      h2 = "#{pluralize(@pub_med_article.errors.count, "error")} prohibited this pub_med_article from being saved:"
+      ul
+        - @pub_med_article.errors.full_messages.each do |message|
+          li = message
+
+  .field
+    = f.label :pm_id
+    = f.number_field :pm_id
+  .field
+    = f.label :title
+    = f.text_field :title
+  .field
+    = f.label :authors
+    = f.text_field :authors
+  .field
+    = f.label :abstract
+    = f.text_area :abstract
+  .field
+    = f.label :publication_date
+    = f.date_select :publication_date
+  .field
+    = f.label :journal_name
+    = f.text_field :journal_name
+  .actions = f.submit 'Save'

@@ -1,0 +1,23 @@
+h1 Listing authors
+
+table
+  tr
+    th Pub med article
+    th Given name
+    th Surname
+    th
+    th
+    th
+
+  - @authors.each do |author|
+    tr
+      td = author.pub_med_article_id
+      td = author.given_name
+      td = author.surname
+      td = link_to 'Show', author
+      td = link_to 'Edit', edit_author_path(author)
+      td = link_to 'Destroy', author, :confirm => 'Are you sure?', :method => :delete
+
+br
+
+= link_to 'New Author', new_author_path

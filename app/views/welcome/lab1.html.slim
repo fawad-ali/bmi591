@@ -1,29 +1,323 @@
 h1 Lab 1
 h4 Preston Lee
 hr
+p I took a challenging path in completing this assignment; instead of turning in a few raw code snippets and a Word document, I've written everything as a full-fledged interactive web application instead. See below for details.
+hr
+
+h2 Methodology
+h4 Part 1i
 
 .col-md-4
-	h4 About
-	p Hey! I took a little different path in completing this assignment. Instead of turning in a few raw code snippets and a Word document, I'm submitting everything as a full-fledged interactive web application instead. Please use the latest version of a modern web browser such as Chrome, Firefox or Safari. I worked on this project alone.
-	p If you'd literally like to check out this code, it's all released under the MIT license on my GitHub page, #{link_to 'https://github.com/preston', 'https://github.com/preston'}.
+
+	h4 PubMed Data
+	h2 Part 2i
+	p For PubMed data, I used the NCBI's "Open Access" data set and used a small selection of files in the complete A-B data set in .nxml format. For testing I used 40,000+ records, but am using a smaller number in this instance to keep performance high. I started by creating a custom relational MySQL database schema and Solr/Lucene configuration file, then wrote an importer using the Nokogiri XML parser and regular XPath queries to extract the relavent fields.
+
+	h4 Source Code
+	p If you'd literally like to check out this code, it's all released under the MIT license on my GitHub page:
+	= link_to 'https://github.com/preston', 'https://github.com/preston', class: 'btn btn-default'
+
+	h4 API Usage
+	p Using the Solr web service API in a "raw" fashion is fairly straightforward. When running solr out of a servlet container on your system, the Apache documentation provides a list of paths and parameters to work with. This is especially useful in cases where the client-side driver does not provide complete access. For example, solving the term vector limitation issue can be done with queries like:
+	pre
+		| http://localhost:8982/solr/select/?q=*%3A*&version=2.2&start=0&rows=100&indent=on&qt=tvrh&tv=true&tv.all=true&f.includes.tv.tf=false
 
 .col-md-4
 	h4 Included Materials
-	p The application is backed by a local Solr daemon over a Lucene processes to index text, as well as a MySQL database for record storage.
+	p This application is backed by a local standalone Solr daemon providing API access to a Lucene index, as well as a MySQL database for record storage. The web application layer is a Rails app running on Ubuntu Server and the Twitter Bootstrap layout engine.
 
-	h4 Live Stats
-	dl.dl-horizontal
-		dt Drug Records
-		dd.text-info = Drug.count
-		dt PubMed Articles
-		/ dd = Article.count
+	.well
+		h4 Live Stats
+		p These numbers are generated dynamically by live database queries.
+		dl.dl-horizontal
+			dt Drug Records
+			dd.text-info = Drug.count
+			dt PubMed Articles
+			dd.text-info = PubMedArticle.count
+
 
 .col-md-4
 	h4 Drugbank Imports
 	= link_to "Browse Drugs", drugs_path, class: 'btn btn-default'
-	p Coincidentally, I wrote the original Drugbank v2 parser in Ruby a few years ago to handle the "DrugCard" format. This has since been deprecated and superceeded by the v3 .xml format and SAX parser implementation maintained by a colleague, Eric Harrison. I used a new custom schema and the existing XML parser to import all drugbank records into this system.
+	p Coincidentally, I wrote the original Drugbank v2 parser in Ruby a few years ago to handle the "DrugCard" format. This has since been deprecated and superceeded by the v3 .xml format and SAX parser implementation now maintained by a colleague. I used a new custom schema and the existing XML parser to import all drugbank records into this system.
+
+	h4 Extraction and Indexing
+	= link_to 'View and Search PubMed Articles', pub_med_articles_path, class: 'btn btn-default'
+	p Article title, journal name, abstract, "epub" publication date, authors, and PubMed ID were extracted from each .nxml file using XPath queries. Those fields where then saved to a MySQL record and index into Solr. Tokenization was done using a simple whitespace parser plus lowercasing of the resultant token. No special consideration was given to non ASCII characters or other special situations.
+
+	h4 General Querying
+	h4 Part 2v
+	p I decided to try the "sunspot" client-side driver for this lab. It generally worked well and made tweaking indexing options easy, though it turns out the term vector support on client-side objects is very limited, which forced me to implement some workarounds. I added query highlighting and a search form with is available on #{link_to "the PubMed Articles page", pub_med_articles_path} page.
+
+.clearfix
+hr
+h4 Part 2i
+p The gist of the importer is as follows:
+
+pre
+	|
+		paths.each do |path|
+			xml = File.read(path)
+			doc = Nokogiri::XML(xml)
+			a = PubMedArticle.new
+		
+			pm_id = doc.xpath('//article-id[@pub-id-type="pmid"]').first
+		
+			title = doc.xpath('//article-title').first
+			abstract = doc.xpath('//abstract/p').first
+			journal_name = doc.xpath('//article//journal-title').first
+			p_year	= doc.xpath('//article//pub-date[@pub-type="epub"]//year').first
+			p_month	= doc.xpath('//article//pub-date[@pub-type="epub"]//month').first
+			p_day	= doc.xpath('//article//pub-date[@pub-type="epub"]//day').first
+		
+			a.pm_id = pm_id.text.to_i unless pm_id.nil?
+			a.title = title.text unless title.nil?
+			a.abstract = abstract.text unless abstract.nil?
+			a.journal_name = journal_name.text unless journal_name.nil?
+			a.publication_date = Date.new(p_year.text.to_i, p_month.text.to_i, p_day.text.to_i) if p_year && p_month && p_day
+			a.save!
+		
+			doc.xpath('//contrib[@contrib-type="author"]').each do |doc_author|
+				author = Author.new(pub_med_article: a)
+				author.surname = doc_author.xpath('./name/surname').text
+				author.given_name = doc_author.xpath('./name/given-names').text
+				author.save!
+			end
+		
+		end		
+
+h2 Data Analysis
+h4 Part 1ii
+
+- total = 0
+- counts = {}
+- PubMedArticle.all.each do |a|
+	- if a.abstract
+		- a.abstract.split.each do |w|
+			- total += 1
+			- d = w.downcase
+			- counts[d] += 1 unless counts[d].nil?
+			- counts[d] = 1 if counts[d].nil?
+
+p Words used in abstracts:
+dl.dl-horizontal
+	dt Unique
+	dd = counts.length
+	dt Total
+	dd = total
+- ordered = counts.sort_by{|k,v| v}.reverse
+P The most frequent 20 words used in abstracts are as follows. As expected, mostly common articles, conjunctions, and verbs etc. rank as the most frequent.
+table.table-striped.table-condensed
+	thead
+		tr
+			th Rank
+			th Word
+			th Actual Count
+			th Predicted Count (Zipf)
+			th Predected Rank
+			th Discrepancy (Observed / Zipf's)
+	tbody
+		- most = ordered[0][1] * 1.0
+		- ordered[0..19].each_with_index do |e,i|
+			- rank = i + 1
+			tr
+				td = rank
+				td = e[0]
+				td = e[1]
+				td = (most / rank).ceil
+				td = sprintf("%.3f", most / e[1] )
+				td = sprintf("%.2f", (100 * e[1] / (most / rank)) - 100) + '%'
+
+- drug_hits = {}
+- drug_names = Drug.pluck(:name).collect{|n| n.downcase}.select{|d| /^\w+$/ =~ d }.sort{|a,b| a <=> b}
+- drug_names.each do |n|
+	- search = PubMedArticle.search do fulltext n do fields :abstract end end
+	- if search.hits.count > 0
+		- drug_hits[n] = search.hits.count
+
+h2 Drug References
+p The following drugs are referenced in article abstracts. Hit counts are provided as well. 
+table.table-condensed.table-striped
+	thead
+		tr
+			th Drug
+			th Hits
+	tbody
+		- drug_hits.each do |k,v|
+			tr
+				td = k
+				td = v
+
+- before = {}
+- after = {}
+- PubMedArticle.pluck(:abstract).each do |ab|
+	- if !ab.nil? && !ab.empty?
+		- tokens = ab.downcase.split
+		- tokens.each do |t|
+			- i = drug_names.index t
+			- if i
+				- b = tokens[i - 1]
+				- a = tokens[i + 1]
+				- before[b] = 0 if before[b].nil?
+				- after[a] = 0 if after[a].nil?
+				- before[b] += 1
+				- after[a] += 1
+
+.col-md-6
+	h3 Words Before Drug Names
+	h4 Part 2ii
+	p The following is a list of the most common words before drug names.
+	- before_ordered = before.sort_by{|k,v| v}.reverse
+	table.table-condensed.table-striped
+		thead
+			tr
+				th Rank
+				th Word
+				th Hits
+		tbody
+			- before_ordered.each_with_index do |e, i|
+				tr
+					td = i + 1
+					td = e[0]
+					td = e[1]
+
+.col-md-6
+	h3 Words After Drug Names
+	h4 Part 2ii
+	p The following is a list of the most common words after drug names.
+	- after_ordered = after.sort_by{|k,v| v}.reverse
+	table.table-condensed.table-striped
+		thead
+			tr
+				th Rank
+				th Word
+				th Hits
+		tbody
+			- after_ordered.each_with_index do |e, i|
+				tr
+					td = i + 1
+					td = e[0]
+					td = e[1]
 
 
 .col-md-4
-	h4 PubMed Data
-	p For PubMed data, I used the NCBI's search tool to pull down article data matching "multiple myeloma" in .csv format. I think created both imported the raw data into a MySQL database, created the Solr/Lucene configuration file, and indexed everything
+	h2 Discussion
+	h4 Part 1iii
+	p Based on comparing the actualy term counts versus those predicted by Zipf's law, it could be argued both ways that 	the law holds for the following reasons:
+	ul
+		li Against: The shown discrepancies between actual versuse expected terms counts is demonstrated to be over 100% (2x	) in some cases. With only a few cases in the top twenty terms dipping below a 20% discrepancy.
+		li For: Zipf's law skews predictions based on the frequency of the first word. In this case, lowering the frequency 	of the first word would have brought most of the predicted counts within a more accurate range.
+
+	h4 Part 1iv
+	- first_three = ordered[0][1] + ordered[1][1] + ordered[2][1]
+	p In my specific collection, the first three terms occurred #{first_three} times. Removing these would remove #{sprintf('%.3f', 100.0 * first_three / total)}% of the total number of terms.
+.col-md-4
+	h2 Query Examples
+	p I used a client-side driver in addition to Solr/Lucene to provide a human-readable DSL for basic queries. For example, the #{link_to 'PubMed Article search page'} uses the following code for all queries, and does not need to be written to show results for different query input:
+	pre
+		|
+			@search = PubMedArticle.search do
+				fulltext params['q'] do
+					highlight	:title
+					highlight	:abstract
+				end
+				paginate page: params[:page] || 1, per_page: 12
+			end
+			@pub_med_articles = @search.hits
+
+.col-md-4
+	h2 Object Configuration
+	p Keeping the Solr index and relational records synchronized is much easier with a client-side driver. The following snippet shows how I configured my "PubMedArticle" class to integrate with the Lucene indexer:
+	pre
+		|
+			searchable do
+				integer	:pm_id
+				text	:title,		stored: true
+				text	:abstract,	stored: true
+				text	:author
+				text	:journal_name,	stored: true
+			end
+
+.clearfix
+hr
+
+.container
+	h2 Journal-Specific Queries
+	h4 Part 2iv
+	p Five simple queries based on journal name.
+	.col-md-6
+		pre
+			|
+				@s1 = PubMedArticle.search do
+					fulltext 'mouse' do
+						fields(:title, :abstract)
+					end
+					with(:journal_name, 'Accounts of Chemical Research')
+				end
+
+				@s2 = PubMedArticle.search do
+					fulltext 'cyclooxygenase' do
+						fields(:title, :abstract)
+					end
+					with(:journal_name, 'The AAPS Journal')
+				end
+
+				@s3 = PubMedArticle.search do
+					with(:journal_name, 'ACS Chemical Biology')
+				end
+				
+				@s4 = PubMedArticle.search do
+					with(:journal_name, 'Acta Histochemica et Cytochemica')
+				end
+				
+				@s5 = PubMedArticle.search do
+					with(:journal_name, 'ACS Medicinal Chemistry Letters')
+				end
+
+	.col-md-6
+		h2 Top Results
+		h4 1
+		ul
+			- @s1.hits[0..9].each do |h|
+				li = h.result.title
+		h4 2
+		ul
+			- @s2.hits[0..9].each do |h|
+				li = h.result.title
+		h4 3
+		ul
+			- @s3.hits[0..9].each do |h|
+				li = h.result.title
+		h4 4
+		ul
+			- @s4.hits[0..9].each do |h|
+				li = h.result.title
+		h4 5
+		ul
+			- @s5.hits[0..9].each do |h|
+				li = h.result.title
+
+h2 Heaps Law data
+h4 Part 1 vi
+p See spreadsheet for graphs.
+
+- heaps = {}
+- total = 0
+- vocab = []
+- PubMedArticle.where('abstract IS NOT NULL').each do |a|
+	- a_words = a.abstract.split.collect{|w| w.downcase}
+	- a_uniq = a_words.uniq
+	- total += a_words.count
+	- vocab += a_uniq
+	- vocab.uniq!
+	- heaps[total] = vocab.count
+table.table-condensed.table-striped
+	thead
+		tr
+			th Total Words
+			th Distinct Words
+	tbody
+		- heaps.each do |k,v|
+			tr
+				td = k
+				td = v

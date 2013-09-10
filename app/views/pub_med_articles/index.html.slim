@@ -1,0 +1,48 @@
+h1 PubMed Articles
+h4 Part 2ii/v
+
+#title_search_box
+  p.muted
+    = PubMedArticle.count
+    |  articles stored and indexed.
+  form.form-search
+    input name='q' type="text" placeholder="Search Articles" class="search-query" value="#{params['q']}"
+
+  - if @search
+    = @search.total
+    |  search hits.
+
+- if @search
+  = will_paginate @pub_med_articles
+  
+  table.table.table-striped.table-condensed.results
+    thead
+      tr
+        th PubMed ID
+        th Title
+        th Authors
+        th Abstract
+        th Publictation Date
+        th Journal name
+        th
+    tbody
+      - @search.each_hit_with_result do |hit, a|
+        tr
+          td = a.pm_id
+          td
+            - if hit.highlight(:title).nil?
+              = a.title
+            - else
+              = hit.highlight(:title).format { |fragment| content_tag(:b, fragment) }.html_safe
+          td = a.authors.collect{|a| "#{a.given_name} #{a.surname}"}.join(', ')
+          td
+            - if hit.highlight(:abstract).nil?
+              = a.abstract
+            - else
+              = hit.highlight(:abstract).format { |fragment| content_tag(:b, fragment) }.html_safe
+          td = a.publication_date
+          td = a.journal_name
+          / td 
+            = link_to 'Show', a
+            = link_to 'Edit', edit_pub_med_article_path(a)
+            = link_to 'Destroy', a, :confirm => 'Are you sure?', :method => :delete

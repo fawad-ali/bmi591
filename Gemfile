@@ -33,9 +33,10 @@ gem 'coffee-rails',	'~> 4.0.0'
 gem 'uglifier',		'>= 1.3.0'
 
 
+# Solr stuff
 gem 'sunspot_rails'
 gem 'sunspot_solr' # optional pre-packaged Solr distribution for use in development
-
+gem 'progress_bar'
 
 group :doc do
   # bundle exec rake doc:rails generates the API under doc/api.

@@ -1,0 +1,17 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  pm_id: 1
+  title: MyString
+  authors: MyString
+  abstract: MyText
+  publication_date: 2013-09-09
+  journal_name: MyString
+
+two:
+  pm_id: 1
+  title: MyString
+  authors: MyString
+  abstract: MyText
+  publication_date: 2013-09-09
+  journal_name: MyString

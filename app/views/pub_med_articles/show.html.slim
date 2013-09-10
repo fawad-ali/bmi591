@@ -1,0 +1,24 @@
+p#notice = notice
+
+p
+  strong Pm:
+  = @pub_med_article.pm_id
+p
+  strong Title:
+  = @pub_med_article.title
+p
+  strong Authors:
+  = @pub_med_article.authors
+p
+  strong Abstract:
+  = @pub_med_article.abstract
+p
+  strong Publictation date:
+  = @pub_med_article.publication_date
+p
+  strong Journal name:
+  = @pub_med_article.journal_name
+
+= link_to 'Edit', edit_pub_med_article_path(@pub_med_article)
+'|
+= link_to 'Back', pub_med_articles_path

@@ -1,0 +1,15 @@
+p#notice = notice
+
+p
+  strong Pub med article:
+  = @author.pub_med_article_id
+p
+  strong Given name:
+  = @author.given_name
+p
+  strong Surname:
+  = @author.surname
+
+= link_to 'Edit', edit_author_path(@author)
+'|
+= link_to 'Back', authors_path
