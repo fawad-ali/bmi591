@@ -18,10 +18,13 @@ import org.xml.sax.helpers.DefaultHandler;
  * way. This is implemented as an event-driven SAX parser to provide O(1) memory
  * complexity regardless of the input file size. :)
  * 
+ * The DTD files must be present in the same directory as your input file:
+ * https://www.ebi.ac.uk/Rebholz-srv/CALBC/dtd/
+ * 
  * @author Preston Lee <preston@asu.edu>
  * 
  */
-public class Lab2Parser extends DefaultHandler {
+public class Lab2SAXParser extends DefaultHandler {
 
 	protected Abstract mCurrentAbstract;
 	protected StringBuilder mCurrentSentence;
