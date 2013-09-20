@@ -99,6 +99,7 @@ public class CreateIndex {
 						doc.removeField(FIELD_COUNT);
 						doc.add(new IntField(FIELD_COUNT, c, Store.YES));
 					}
+
 					writer.updateDocument(term, doc);
 
 				}
