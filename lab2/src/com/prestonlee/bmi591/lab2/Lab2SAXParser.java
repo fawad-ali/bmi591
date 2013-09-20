@@ -35,6 +35,7 @@ public class Lab2SAXParser extends DefaultHandler {
 	protected int mSentenceCount;
 
 	protected final static int PROGRESS_INTERVAL = 10000;
+	protected final static String PLACEHOLDER = "GENE_ENTITY";
 
 	public void reset(final String pOutFile) throws FileNotFoundException {
 		mCurrentAbstract = null;
@@ -71,9 +72,9 @@ public class Lab2SAXParser extends DefaultHandler {
 			mCurrentSentence = new StringBuilder();
 		} else if (elementName.equalsIgnoreCase("e")) {
 			// New element. :)
-			String id = attributes.getValue("id");
-			mCurrentElement = attributes;
-			mCurrentSentence.append(id);
+			 mCurrentElement = attributes;
+			// String id = attributes.getValue("id");
+			// mCurrentSentence.append(id);
 		}
 	}
 
@@ -94,6 +95,7 @@ public class Lab2SAXParser extends DefaultHandler {
 			mCurrentSentence = null;
 			mSentenceCount += 1;
 		} else if (mCurrentSentence != null && element.equalsIgnoreCase("e")) {
+			mCurrentSentence.append(PLACEHOLDER);
 			mCurrentElement = null;
 		}
 	}
