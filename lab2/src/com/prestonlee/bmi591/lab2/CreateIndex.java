@@ -84,6 +84,7 @@ public class CreateIndex {
 					}
 
 					if (doc == null) {
+						// Newly encountered n-gram.
 						doc = new Document();
 						doc.add(new IntField(FIELD_ID, id, Store.YES));
 						doc.add(new StringField(FIELD_TEXT, token, Store.YES));
@@ -91,6 +92,7 @@ public class CreateIndex {
 						doc.add(new IntField(FIELD_N, n, Store.YES));
 						doc.add(new IntField(FIELD_COUNT, 1, Store.YES));
 					} else {
+						// Existing n-gram, so just increment the count.
 						String cs = doc.get(FIELD_COUNT);
 						int c = Integer.parseInt(cs);
 						c++;
@@ -99,7 +101,6 @@ public class CreateIndex {
 					}
 					writer.updateDocument(term, doc);
 
-					System.out.println(cattr.toString());
 				}
 				tokenizer.end();
 				tokenizer.close();
