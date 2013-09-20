@@ -8,57 +8,116 @@ import java.util.Scanner;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.core.StopFilter;
+import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.standard.StandardFilter;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field.Store;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.util.Attribute;
 import org.apache.lucene.util.Version;
+
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
 public class CreateIndex {
 
+	public static String FIELD_ID = "id";
+	public static String FIELD_TEXT = "text";
+	public static String FIELD_N = "n";
+	public static String FIELD_POS = "pos";
+	public static String FIELD_COUNT = "count";
+
 	public static void main(String[] args) throws IOException {
-		if (args.length != 2) {
-			System.out.println("\n\tUsage: java " + CreateIndex.class.getName() + " <input_sentences> " + " <index_directory>\n");
+		if (args.length != 3) {
+			System.out.println("\n\tUsage: java " + CreateIndex.class.getName() + " <input_sentences> <index_directory> <.tagger_file>\n");
 		} else {
 			final String inFile = args[0];
 			final Scanner in = new Scanner(new File(inFile));
 			System.out.println("Sentence source:\t" + inFile);
-			final IndexWriter index = createIndex(args[1]);
+			final IndexWriter writer = createIndex(args[1]);
+			final IndexSearcher searcher = createIndexReder(writer);
+			final String taggerConfig = args[2];
 
-			StringReader reader;
-			String sentence = in.nextLine();
+			String sentence;
 			final ArrayList<String> nGrams = new ArrayList<String>();
+			final StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_44);
 
-			while (sentence != null) {
+			MaxentTagger tagger = new MaxentTagger(taggerConfig);
+
+			while (in.hasNextLine()) {
+				sentence = in.nextLine();
 				System.out.println(sentence);
-				Document doc = new Document();
-//				doc.add(field)
-//				reader = new StringReader(sentence);
-//				TokenStream tokenizer = new StandardTokenizer(Version.LUCENE_44, reader);
-//				tokenizer = new StandardFilter(Version.LUCENE_44, tokenizer);
-//				tokenizer = new StopFilter(Version.LUCENE_44, tokenizer, StandardAnalyzer.STOP_WORDS_SET);
-//				 tokenizer= new ShingleFilter(tokenizer, 2, 3);
-//				Attribute charTermAttribute = tokenizer.addAttribute(CharTermAttribute.class);
-//
-//				while (tokenizer.incrementToken()) {
-//					String curNGram = charTermAttribute.toString().toString();
-//					nGrams.add(curNGram); // store each token into an ArrayList
-//				}
-//				sentence = in.nextLine();
+				StringReader reader = new StringReader(sentence);
+
+				// Create N-grams using Lucene's voodoo.
+				TokenStream tokenizer = analyzer.tokenStream(null, reader);
+				tokenizer = new ShingleFilter(tokenizer, 2, 3);
+				CharTermAttribute cattr = tokenizer.addAttribute(CharTermAttribute.class);
+				OffsetAttribute offsetAttribute = tokenizer.addAttribute(OffsetAttribute.class);
+				tokenizer.reset();
+				while (tokenizer.incrementToken()) {
+					int startOffset = offsetAttribute.startOffset();
+					int endOffset = offsetAttribute.endOffset();
+					String token = cattr.toString();
+					System.out.println(token);
+
+					// Stanford tagger magic.
+					int n = MaxentTagger.tokenizeText(new StringReader(token)).get(0).size();
+					String tagged = tagger.tagTokenizedString(token);
+					System.out.println(tagged);
+
+					int id = token.hashCode();
+					Term term = new Term(FIELD_ID);
+					Document doc = null;
+					try {
+						doc = searcher.doc(id);
+					} catch (IllegalArgumentException e) {
+						System.out.println(e);
+					}
+
+					if (doc == null) {
+						doc = new Document();
+						doc.add(new IntField(FIELD_ID, id, Store.YES));
+						doc.add(new StringField(FIELD_TEXT, token, Store.YES));
+						doc.add(new StringField(FIELD_POS, tagged, Store.YES));
+						doc.add(new IntField(FIELD_N, n, Store.YES));
+						doc.add(new IntField(FIELD_COUNT, 1, Store.YES));
+					} else {
+						String cs = doc.get(FIELD_COUNT);
+						int c = Integer.parseInt(cs);
+						c++;
+						doc.removeField(FIELD_COUNT);
+						doc.add(new IntField(FIELD_COUNT, c, Store.YES));
+					}
+					writer.updateDocument(term, doc);
+
+					System.out.println(cattr.toString());
+				}
+				tokenizer.end();
+				tokenizer.close();
+
 			}
 			for (String s : nGrams) {
 				System.out.println(s);
 			}
-			
+			writer.close();
+
 		}
 
+	}
+
+	private static IndexSearcher createIndexReder(final IndexWriter pWriter) throws IOException {
+		DirectoryReader reader = DirectoryReader.open(pWriter, true);
+		IndexSearcher searcher = new IndexSearcher(reader);
+		return searcher;
 	}
 
 	protected static IndexWriter createIndex(final String indexPath) throws IOException {
