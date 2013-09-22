@@ -28,19 +28,22 @@ public class Lab2SAXParser extends DefaultHandler {
 
 	protected Abstract mCurrentAbstract;
 	protected StringBuilder mCurrentSentence;
-	protected Attributes mCurrentElement;
+	protected Attributes mCurrentElementAttributes;
 	protected PrintWriter mOutFile;
 
 	protected int mAbstractCount;
 	protected int mSentenceCount;
 
 	protected final static int PROGRESS_INTERVAL = 10000;
-	protected final static String PLACEHOLDER = "GENE_ENTITY";
+	protected final static String PLACEHOLDER_GENE = "PRGE_ENTITY";
+	protected final static String PLACEHOLDER_OTHER = "GENE_ENTITY";
+	protected final static String GENE_TOKEN = "prge";
+	protected final static String GENE_ATTRIBUTE = "ct";
 
 	public void reset(final String pOutFile) throws FileNotFoundException {
 		mCurrentAbstract = null;
 		mCurrentSentence = null;
-		mCurrentElement = null;
+		mCurrentElementAttributes = null;
 		mOutFile = new PrintWriter(pOutFile);
 		mAbstractCount = 0;
 		mSentenceCount = 0;
@@ -72,7 +75,7 @@ public class Lab2SAXParser extends DefaultHandler {
 			mCurrentSentence = new StringBuilder();
 		} else if (elementName.equalsIgnoreCase("e")) {
 			// New element. :)
-			 mCurrentElement = attributes;
+			mCurrentElementAttributes = attributes;
 			// String id = attributes.getValue("id");
 			// mCurrentSentence.append(id);
 		}
@@ -95,15 +98,19 @@ public class Lab2SAXParser extends DefaultHandler {
 			mCurrentSentence = null;
 			mSentenceCount += 1;
 		} else if (mCurrentSentence != null && element.equalsIgnoreCase("e")) {
-			mCurrentSentence.append(PLACEHOLDER);
-			mCurrentElement = null;
+			if (GENE_TOKEN.equals(mCurrentElementAttributes.getValue(GENE_ATTRIBUTE))) {
+				mCurrentSentence.append(PLACEHOLDER_GENE);
+			} else {
+				mCurrentSentence.append(PLACEHOLDER_OTHER);
+			}
+			mCurrentElementAttributes = null;
 		}
 	}
 
 	@Override
 	public void characters(final char[] ac, final int i, final int j) throws SAXException {
 		String s = new String(ac, i, j);
-		if (mCurrentElement != null) {
+		if (mCurrentElementAttributes != null) {
 			// Discard the element text.
 		} else if (mCurrentSentence != null) {
 			// Append it to the end of the current sentence.

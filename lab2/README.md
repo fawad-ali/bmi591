@@ -8,9 +8,8 @@ I completed the first lab in Ruby, but decided to switch to Java for this lab af
 
 ## Part 1
 
-I pulled the DTDs from https://www.ebi.ac.uk/Rebholz-srv/CALBC/dtd/ and wrote a SAX parser by extending the standard event-based org.xml.sax.helpers.DocumentHandler, as is typical for large document parsers to avoid needing to create a massive DOM in memory. The parser finds each sentence ('s' element) within every AbstractText element and replaces each "e" element with only the id of the element, and writing each sentence to an output file along the way. The event-driven nature of SAX provides an O(1) memory complexity regardless of the input file size. The parser also outputs some basic statistics:
+I pulled the DTDs from https://www.ebi.ac.uk/Rebholz-srv/CALBC/dtd/ and wrote a SAX parser by extending the standard event-based org.xml.sax.helpers.DocumentHandler, as is typical for large document parsers to avoid needing to create a massive DOM in memory. The parser finds each sentence ('s' element) within every AbstractText element and replaces each "e" element with only the id of the element, and writing each sentence to an output file along the way. The event-driven nature of SAX provides an O(1) memory complexity regardless of the input file size. The parser also outputs some basic statistics. For the entire data set, the output is:
 
-    Copyright (c) 2013 Preston Lee. All rights reserved. Released under the MIT license.
 	Parsing:		/Users/preston/Downloads/calbc_dtds_01-12-10/175k-allcomer-xtype
 	Writing:		/Users/preston/Downloads/calbc_dtds_01-12-10/175k-allcomer-xtype.sentences.txt
 	10000 abstracts parsed...
@@ -28,11 +27,20 @@ I pulled the DTDs from https://www.ebi.ac.uk/Rebholz-srv/CALBC/dtd/ and wrote a 
 	Sentences written:	911400
 	Done!
 
-It takes about 30 seconds to run, after which I have a text file with one sentence per line.
+It takes about 30 seconds to run, after which I have a text file with one sentence per line. For the test data set, the output is:
+
+	Parsing:		/Users/preston/Downloads/calbc_dtds_01-12-10/175k-allcomer-xtype.test
+	Writing:		/Users/preston/Downloads/calbc_dtds_01-12-10/175k-allcomer-xtype.test.sentences.txt
+	10000 abstracts parsed...
+	Abstracts parsed:	13097
+	Sentences written:	114244
+	Done!
+ 
+
 
 ## Part 2 ##
 
-Rather than taking a chunk of abstracts from the beginning or end, I decided to sort the sentences by number of characters and chose TODO
-TODO
+We took approximately 10% of the total number abstracts from the beginning of the complete data set as our training data. 10% provides over 100K sentences and also also for enough additional validates sets to test our results in future sections.
+
 
 ## Part 3

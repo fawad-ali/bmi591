@@ -55,28 +55,27 @@ public class CreateIndex {
 			long start;
 			double rate = 0.0;
 			int count = 0;
-			IndexWriter writer = null;
+			IndexWriter writer = createIndexWriter(args[1]);
+
 			while (in.hasNextLine()) {
-				writer = createIndexWriter(args[1]);
 				start = System.currentTimeMillis();
 				sentence = in.nextLine();
 				// System.out.println(sentence);
 				StringReader reader = new StringReader(sentence);
+				TokenStream tokenizer = analyzer.tokenStream(null, reader);
 
 				// Create N-grams using Lucene's voodoo.
-				TokenStream tokenizer = analyzer.tokenStream(null, reader);
 				tokenizer = new ShingleFilter(tokenizer, 2, 3);
 				CharTermAttribute cattr = tokenizer.addAttribute(CharTermAttribute.class);
 				OffsetAttribute offsetAttribute = tokenizer.addAttribute(OffsetAttribute.class);
 				tokenizer.reset();
 				while (tokenizer.incrementToken()) {
 					updateDocument(writer, tagger, cattr.toString());
+					writer.commit();
 				}
 				tokenizer.end();
 				tokenizer.close();
-				writer.forceMergeDeletes(true);
-				writer.commit();
-				writer.close(true);
+//				writer.forceMergeDeletes(true);
 				rate = ((System.currentTimeMillis() - start) / 1000.0);
 				count++;
 				System.out.println(count + " sentences indexed. The last took " + rate + " seconds.");
@@ -84,6 +83,7 @@ public class CreateIndex {
 			// for (String s : nGrams) {
 			// System.out.println(s);
 			// }
+			writer.close(true);
 			analyzer.close();
 
 		}
