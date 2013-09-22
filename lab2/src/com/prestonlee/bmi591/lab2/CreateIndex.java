@@ -16,6 +16,7 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.IntField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexDeletionPolicy;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
@@ -44,15 +45,20 @@ public class CreateIndex {
 			final String inFile = args[0];
 			final Scanner in = new Scanner(new File(inFile));
 			System.out.println("Sentence source:\t" + inFile);
-			final IndexWriter writer = createIndexWriter(args[1]);
-			final String taggerConfig = args[2];
 
 			String sentence;
 			// final ArrayList<String> nGrams = new ArrayList<String>();
 			final StandardAnalyzer analyzer = new StandardAnalyzer(Version.LUCENE_44);
 
+			final String taggerConfig = args[2];
 			MaxentTagger tagger = new MaxentTagger(taggerConfig);
+			long start;
+			double rate = 0.0;
+			int count = 0;
+			IndexWriter writer = null;
 			while (in.hasNextLine()) {
+				writer = createIndexWriter(args[1]);
+				start = System.currentTimeMillis();
 				sentence = in.nextLine();
 				// System.out.println(sentence);
 				StringReader reader = new StringReader(sentence);
@@ -68,28 +74,36 @@ public class CreateIndex {
 				}
 				tokenizer.end();
 				tokenizer.close();
+				writer.forceMergeDeletes(true);
 				writer.commit();
+				writer.close(true);
+				rate = ((System.currentTimeMillis() - start) / 1000.0);
+				count++;
+				System.out.println(count + " sentences indexed. The last took " + rate + " seconds.");
 			}
 			// for (String s : nGrams) {
 			// System.out.println(s);
 			// }
-			writer.close();
 			analyzer.close();
 
 		}
 
 	}
 
-	protected static void updateDocument(final IndexWriter writer, MaxentTagger tagger, String token) throws IOException {
+	protected static void updateDocument(final IndexWriter pWriter, MaxentTagger tagger, String token) throws IOException {
 		// int startOffset = offsetAttribute.startOffset();
 		// int endOffset = offsetAttribute.endOffset();
 		// System.out.println(token);
 
-		IndexSearcher searcher = createIndexReader(writer);
-		DirectoryReader reader = DirectoryReader.openIfChanged((DirectoryReader) searcher.getIndexReader());
-		if (reader != null) {
-			searcher = new IndexSearcher(reader);
-		}
+		DirectoryReader reader = DirectoryReader.open(pWriter, true);
+		IndexSearcher searcher = new IndexSearcher(reader);
+
+		// DirectoryReader reader =
+		// DirectoryReader.openIfChanged((DirectoryReader)
+		// searcher.getIndexReader());
+		// if (reader != null) {
+		// searcher = new IndexSearcher(reader);
+		// }
 
 		// Stanford tagger magic.
 		int n = MaxentTagger.tokenizeText(new StringReader(token)).get(0).size();
@@ -104,40 +118,47 @@ public class CreateIndex {
 		}
 		Document doc = null;
 		try {
-			doc = searcher.doc(docId);
+			doc = reader.document(docId);
+			// doc = searcher.doc(docId);
 		} catch (IllegalArgumentException e) {
 			// System.out.println(e);
 		}
 
-		if (doc == null) {
-			// Newly encountered n-gram.
-			doc = new Document();
-			// doc.add(new IntField(FIELD_ID, id, Store.YES));
-			doc.add(new StringField(FIELD_TEXT, token, Store.YES));
-			doc.add(new StringField(FIELD_POS, tagged, Store.YES));
-			doc.add(new IntField(FIELD_N, n, Store.YES));
-			doc.add(new IntField(FIELD_COUNT, 1, Store.YES));
-		} else {
-			// Existing n-gram, so just increment the count.
+		if ("gene_entity".equals(token)) {
+			System.out.println(token);
+		}
+		int count = 1;
+
+		if (doc != null) {
 			String cs = doc.get(FIELD_COUNT);
-			int count = Integer.parseInt(cs);
+			count = Integer.parseInt(cs);
 			count += 1;
-			if ("gene_entity".equals(token)) {
-				System.out.println(count + ": " + token);
-			}
-			doc.removeField(FIELD_COUNT);
-			doc.add(new IntField(FIELD_COUNT, count, Store.YES));
+			pWriter.deleteDocuments(term);
+			pWriter.forceMergeDeletes(true);
+		}
+		doc = new Document();
+		doc.add(new StringField(FIELD_TEXT, token, Store.YES));
+		doc.add(new StringField(FIELD_POS, tagged, Store.YES));
+		doc.add(new IntField(FIELD_N, n, Store.YES));
+		doc.add(new IntField(FIELD_COUNT, count, Store.YES));
+		if ("gene_entity".equals(token)) {
+			System.out.println(count + ": " + token);
 		}
 
-		writer.updateDocument(term, doc);
-		writer.commit();
+		searcher.getIndexReader().close();
+		// searcher.
+
+		pWriter.addDocument(doc);
+		// pWriter.updateDocument(term, doc);
+		pWriter.commit();
+		// writer.
 	}
 
-	private static IndexSearcher createIndexReader(final IndexWriter pWriter) throws IOException {
-		DirectoryReader reader = DirectoryReader.open(pWriter, true);
-		IndexSearcher searcher = new IndexSearcher(reader);
-		return searcher;
-	}
+	// private static IndexReader createIndexReader(final IndexWriter pWriter)
+	// throws IOException {
+	// DirectoryReader reader = DirectoryReader.open(pWriter, true);
+	// return reader;
+	// }
 
 	protected static IndexWriter createIndexWriter(final String indexPath) throws IOException {
 		System.out.println("Index directory:\t" + indexPath);
@@ -145,8 +166,9 @@ public class CreateIndex {
 		final Directory indexDir = FSDirectory.open(indexFile);
 		final Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_44);
 		final IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_44, analyzer);
-		final IndexWriter index = new IndexWriter(indexDir, iwc);
-		return index;
+		final IndexWriter writer = new IndexWriter(indexDir, iwc);
+		// writer.
+		return writer;
 	}
 
 }
