@@ -98,7 +98,8 @@ public class Lab2SAXParser extends DefaultHandler {
 			mCurrentSentence = null;
 			mSentenceCount += 1;
 		} else if (mCurrentSentence != null && element.equalsIgnoreCase("e")) {
-			if (GENE_TOKEN.equals(mCurrentElementAttributes.getValue(GENE_ATTRIBUTE))) {
+			String val = mCurrentElementAttributes.getValue(GENE_ATTRIBUTE);
+			if (val != null && val.contains(GENE_TOKEN)) {
 				mCurrentSentence.append(PLACEHOLDER_GENE);
 			} else {
 				mCurrentSentence.append(PLACEHOLDER_OTHER);
