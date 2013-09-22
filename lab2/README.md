@@ -40,7 +40,7 @@ It takes about 30 seconds to run, after which I have a text file with one senten
 
 ## Part 2 ##
 
-We took approximately 10% of the total number abstracts from the beginning of the complete data set as our training data. 10% provides over 100K sentences and also also for enough additional validates sets to test our results in future sections.
+I took 15,000 sentences near the beginning of the complete data set as training data. While this was only 1% additional validates sets to test our results in future sections.
 
 
 ## Part 3
