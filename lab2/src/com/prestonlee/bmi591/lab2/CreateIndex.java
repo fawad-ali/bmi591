@@ -6,6 +6,8 @@ import java.io.StringReader;
 import java.util.Scanner;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -39,6 +41,7 @@ public class CreateIndex implements Runnable {
 	public static final String FIELD_COUNT = "count";
 
 	public static IndexWriter writer;
+	public static Lock writerLock = new ReentrantLock();
 	public static String taggerConfig;
 
 	public static final int NUM_WORKERS = 4;
@@ -127,9 +130,6 @@ public class CreateIndex implements Runnable {
 			// System.out.println(e);
 		}
 
-		if ("gene_entity".equals(token)) {
-			System.out.println(token);
-		}
 		int count = 1;
 
 		if (doc != null) {
@@ -147,14 +147,11 @@ public class CreateIndex implements Runnable {
 		if ("gene_entity".equals(token)) {
 			System.out.println(token + " count: " + count);
 		}
-
+		pWriter.addDocument(doc);
+		pWriter.commit();
 		searcher.getIndexReader().close();
 		// searcher.
 
-		pWriter.addDocument(doc);
-		// pWriter.updateDocument(term, doc);
-		pWriter.commit();
-		// writer.
 	}
 
 	// private static IndexReader createIndexReader(final IndexWriter pWriter)
@@ -200,8 +197,10 @@ public class CreateIndex implements Runnable {
 					OffsetAttribute offsetAttribute = tokenizer.addAttribute(OffsetAttribute.class);
 					tokenizer.reset();
 					while (tokenizer.incrementToken()) {
+						writerLock.lock();
 						updateDocument(writer, tagger, cattr.toString());
 						writer.commit();
+						writerLock.unlock();
 					}
 					tokenizer.end();
 					tokenizer.close();
@@ -211,7 +210,7 @@ public class CreateIndex implements Runnable {
 					// System.out.println(count +
 					// " sentences indexed. The last took " + rate +
 					// " seconds.");
-					System.out.println("Thread took " + rate + " seconds. (Thread: " + Thread.currentThread().getName() + ")");
+//					System.out.println(Thread.currentThread().getName() + ": " + rate + "s");
 				}
 			}
 
